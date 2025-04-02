@@ -4,19 +4,18 @@ const db = require('../config/db.js');
 const crypto = require('crypto');
 
 const createUser = async (req, res) => {
-    const { username, email, password } = req.body;
+    const {  email, password } = req.body;
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const [result] = await db.execute(
-            'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-            [username, email, hashedPassword]
+            'INSERT INTO users ( email, password) VALUES (?, ?)',
+            [ email, hashedPassword]
         );
 
         const data = {
             id: result.insertId,
-            username: username,
             email: email
         };
 
@@ -55,7 +54,7 @@ const login = async (req, res) => {
         if (!isMatch) {
             return res.status(401).json({
                 status: 401,
-                message: 'ngu',
+                message: 'Invalid password',
                 data: null
             });
         }
@@ -147,7 +146,7 @@ const getUser = async (req, res) => {
 
     try {
         const [result] = await db.execute(
-            'SELECT user_id, username, email, created_at FROM users WHERE user_id = ?',
+            'SELECT user_id, email, created_at FROM users WHERE user_id = ?',
             [userId]
         );
 
@@ -174,53 +173,11 @@ const getUser = async (req, res) => {
 };
 
 
-const updateUser = async (req, res) => {
-    const userId = req.user.userId;
-    const { username, email, password } = req.body;
-
-    try {
-        let hashedPassword = null;
-        if (password) {
-            hashedPassword = await bcrypt.hash(password, 10);
-        }
-
-        const [result] = await db.execute(
-            'UPDATE users SET username = ?, email = ?, password = ? WHERE id = ?',
-            [
-                username,
-                email,
-                hashedPassword || db.raw('password'),
-                userId
-            ]
-        );
-
-        if (result.affectedRows > 0) {
-            res.status(200).json({
-                status: 200,
-                message: 'User updated successfully',
-                data: { id: userId, username, email }
-            });
-        } else {
-            res.status(404).json({
-                status: 404,
-                message: 'User not found',
-                data: null
-            });
-        }
-    } catch (error) {
-        res.status(500).json({
-            status: 500,
-            message: error.message,
-            data: null
-        });
-    }
-};
-
 
 
 module.exports = {
     createUser,
-    updateUser,
+  
     getUser,
     login,
     logout,
